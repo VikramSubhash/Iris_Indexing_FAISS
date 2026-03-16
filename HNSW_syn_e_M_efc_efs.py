@@ -9,7 +9,7 @@ from typing import List, Optional
 import numpy as np
 import plotly.graph_objects as go
 from scipy.io import loadmat
-
+import threading   # added for thread safety in HNSW csv
 import argparse 
 
 # take num_index_per_subject as argument
@@ -17,7 +17,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--e", type=int, default=3, help="Number of index vectors to use per subject (default: 3)")
 parser.add_argument("--M", type=int, default=32, help="HNSW parameter M (default: 32)")
 parser.add_argument("--efc", type=int, default=300, help="HNSW parameter ef_construction (default: 300)")
-parser.add_argument("--efs", type=int, default=400, help="HNSW parameter ef_search (default: 400)")
+
+parser.add_argument("--efs_start", type=int, default=100, help="HNSW parameter ef_search (default: 400)")
+parser.add_argument("--efs_end", type=int, default=1000, help="HNSW parameter ef_search (default: 1000)")
+parser.add_argument("--efs_step", type=int, default=100, help="HNSW parameter ef_search step (default: 100)")
+# parser.add_argument("--efs", type=int, default=400, help="HNSW parameter ef_search (default: 400)")
 # add argument for input dataset folder
 parser.add_argument("--root_folder", type=str, default=f"/home/nishkal/sg/iris_indexing/datasets/iris_syn_test", help="Root folder of the dataset (default: /home/nishkal/sg/iris_indexing/datasets/iris_syn)")
 # add an out file argument to save results
@@ -30,32 +34,36 @@ from pathlib import Path as P
 num_index_per_subject = args.e
 M = args.M
 ef_construction = args.efc
+
 ef_search = args.efs
+
+
 out_dir = f"results/hnsw/"
 P(out_dir).mkdir(parents=True, exist_ok=True)
-out_file = f"{out_dir}/HNSW_syn_e{num_index_per_subject}_M{M}_efc{ef_construction}_efs{ef_search}.txt"
+# out_file = f"{out_dir}/HNSW_syn_e{num_index_per_subject}_M{M}_efc{ef_construction}_efs{ef_search}.txt"
 root_folder = args.root_folder
 
 # log all the arguments to the output file
 
 import logging as lg
-# log the date and time and the output
+# log the results into a csv file with columns: num_index_per_subject, M, ef_construction, ef_search, hit_rate, avg_time_ms, total_queries
 # pipe output to the terminal as well as file
-# log errors as well into the same file
+# python HNSW_syn_e_M_efc_efs.py --e 3 --M 32 --efc 300 --efs 400
 lg.basicConfig(
     level=lg.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        lg.FileHandler(out_file),
+        # lg.FileHandler(out_file),
         lg.StreamHandler()
     ]
 )
 
-# usage
-# python HNSW_syn_e_M_efc_efs.py --e 3 --M 32 --efc 300 --efs 400
-lg.info(f"Arguments: num_index_per_subject={num_index_per_subject}, M={M}, ef_construction={ef_construction}, ef_search={ef_search}, root_folder={root_folder}, out_file={out_file}")
+csv_lock = threading.Lock()  # added
 
-
+out_csv = P(f"{out_dir}").parent/"HNSW_syn_results.csv"
+if not out_csv.exists():
+    with csv_lock, open(out_csv, "w") as f:
+        f.write("num_index_per_subject,M,ef_construction,ef_search,index_build_time,hit_rate,avg_time_ms,total_queries\n")
 
 class Node:
     def __init__(self, idx: int, vector: np.ndarray, level: int):
@@ -464,7 +472,11 @@ lg.info(f"Index construction time: {end - st:.4f} seconds")
 
 lg.info(f"Index built with {len(index_vectors)} vectors.")
 
-results = evaluate_top1_timing(hnsw,index_labels,query_vectors,query_labels,ef_search=ef_search)
-lg.info("Hit rate:", results["hit_rate"])
-lg.info("Average search time (ms):", results["avg_time_s"] * 1000)
-lg.info(f"Total queries: {results['total_queries']}")
+for ef_search in range(args.efs_start, args.efs_end + 1, args.efs_step):
+    results = evaluate_top1_timing(hnsw,index_labels,query_vectors,query_labels,ef_search=ef_search)
+    lg.info(f"Hit rate: {results['hit_rate']}")
+    lg.info(f"Average search time (ms): {results['avg_time_s'] * 1000}")
+    lg.info(f"Total queries: {results['total_queries']}")
+    # save results to csv
+    with csv_lock, open(out_csv, "a") as f:
+        f.write(f"{num_index_per_subject},{M},{ef_construction},{ef_search},{end - st:.4f},{results['hit_rate']},{results['avg_time_s'] * 1000:.4f},{results['total_queries']}\n")

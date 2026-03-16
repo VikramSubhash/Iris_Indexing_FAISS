@@ -1,5 +1,0 @@
-Index construction time: 1279.1809 seconds
-Index built with 70000 vectors.
-Hit rate: 0.8115
-Average search time (ms): 16.63780646538362
-Total queries: 10000
