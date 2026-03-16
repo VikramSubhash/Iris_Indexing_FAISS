@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import time
 import re
@@ -63,7 +64,7 @@ csv_lock = threading.Lock()  # added
 out_csv = P(f"{out_dir}").parent/"HNSW_syn_results.csv"
 if not out_csv.exists():
     with csv_lock, open(out_csv, "w") as f:
-        f.write("num_index_per_subject,M,ef_construction,ef_search,index_build_time,hit_rate,avg_time_ms,total_queries\n")
+        f.write("date,time,num_index_per_subject,M,ef_construction,ef_search,index_build_time,hit_rate,avg_time_ms,total_queries\n")
 
 class Node:
     def __init__(self, idx: int, vector: np.ndarray, level: int):
@@ -479,4 +480,4 @@ for ef_search in range(args.efs_start, args.efs_end + 1, args.efs_step):
     lg.info(f"Total queries: {results['total_queries']}")
     # save results to csv
     with csv_lock, open(out_csv, "a") as f:
-        f.write(f"{num_index_per_subject},{M},{ef_construction},{ef_search},{end - st:.4f},{results['hit_rate']},{results['avg_time_s'] * 1000:.4f},{results['total_queries']}\n")
+        f.write(f"{datetime.now().strftime('%Y-%m-%d,%H:%M:%S')},{num_index_per_subject},{M},{ef_construction},{ef_search},{end - st:.4f},{results['hit_rate']},{results['avg_time_s'] * 1000:.4f},{results['total_queries']}\n")

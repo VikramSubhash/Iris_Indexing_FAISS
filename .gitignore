@@ -12,7 +12,7 @@ output/
 .vscode/
 __pycache__
 
-log/
+log*/
 
 # Compiled Java class files
 *.class
