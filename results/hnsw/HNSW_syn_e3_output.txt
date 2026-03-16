@@ -1,0 +1,4 @@
+python HNSW_syn.py --e 3 > results/hnsw/HNSW_syn_e3_output.txt 2>&1 &
+Index built with 30000 vectors.
+Hit rate: 0.5671
+Average search time (ms): 15.974249056243572

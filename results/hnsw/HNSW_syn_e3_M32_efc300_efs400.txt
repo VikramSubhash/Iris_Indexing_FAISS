@@ -1,0 +1,10 @@
+2026-03-16 19:02:28,964 - INFO - ⚠️ Requested 10000 queries, but only 70 available.
+2026-03-16 19:02:28,967 - INFO - Index construction time: 0.0025 seconds
+2026-03-16 19:02:28,967 - INFO - Index built with 30 vectors.
+2026-03-16 19:02:28,976 - INFO - Total queries: 70
+2026-03-16 19:03:16,249 - INFO - Arguments: num_index_per_subject=3, M=32, ef_construction=300, ef_search=400, root_folder=/home/nishkal/sg/iris_indexing/datasets/iris_syn_test, out_file=results/hnsw//HNSW_syn_e3_M32_efc300_efs400.txt
+2026-03-16 19:03:16,269 - INFO - ⚠️ Requested 10000 queries, but only 70 available.
+2026-03-16 19:03:16,272 - INFO - Index construction time: 0.0026 seconds
+2026-03-16 19:03:16,272 - INFO - Index built with 30 vectors.
+2026-03-16 19:03:16,281 - INFO - Total queries: 70
+2026-03-16 19:08:42,561 - INFO - Arguments: num_index_per_subject=3, M=32, ef_construction=300, ef_search=400, root_folder=/home/nishkal/sg/iris_indexing/datasets/iris_syn_test, out_file=results/hnsw//HNSW_syn_e3_M32_efc300_efs400.txt
