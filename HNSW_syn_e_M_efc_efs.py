@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 from scipy.io import loadmat
 import threading   # added for thread safety in HNSW csv
 import argparse 
+import sys
 
 # take num_index_per_subject as argument
 parser = argparse.ArgumentParser()
@@ -24,13 +25,14 @@ parser.add_argument("--efs_end", type=int, default=1000, help="HNSW parameter ef
 parser.add_argument("--efs_step", type=int, default=100, help="HNSW parameter ef_search step (default: 100)")
 # parser.add_argument("--efs", type=int, default=400, help="HNSW parameter ef_search (default: 400)")
 # add argument for input dataset folder
-parser.add_argument("--root_folder", type=str, default=f"/home/nishkal/sg/iris_indexing/datasets/iris_syn", help="Root folder of the dataset (default: /home/nishkal/sg/iris_indexing/datasets/iris_syn)")
+parser.add_argument("--root_folder", type=str, default=f"/home/nishkal/sg/iris_indexing/datasets/iris_syn_test", help="Root folder of the dataset (default: /home/nishkal/sg/iris_indexing/datasets/iris_syn)")
 # add an out file argument to save results
 # parser.add_argument("--out", type=str, default=f"HNSW_syn_e3_M32_efc300_efs400.txt", help="Output file to save results (default: results.txt)")
 # parser.add_argument("--out_dir", type=str, default=f"results/hnsw/", help="Directory to save results (default: results/hnsw/)")
 args = parser.parse_args()
 
 from pathlib import Path as P
+
 # variable that holds this
 num_index_per_subject = args.e
 M = args.M
@@ -39,9 +41,12 @@ ef_construction = args.efc
 # ef_search = args.efs
 
 
-out_dir = f"results/hnsw/"
-P(out_dir).mkdir(parents=True, exist_ok=True)
+out_dir = P(f"results/hnsw/")
+
+out_dir.mkdir(parents=True, exist_ok=True)
 # out_file = f"{out_dir}/HNSW_syn_e{num_index_per_subject}_M{M}_efc{ef_construction}_efs{ef_search}.txt"
+
+
 root_folder = args.root_folder
 
 # log all the arguments to the output file
@@ -61,11 +66,33 @@ lg.basicConfig(
 
 csv_lock = threading.Lock()  # added
 
-out_csv = P(f"{out_dir}").parent/"HNSW_syn_results.csv"
+out_csv:P = out_dir.parent/"HNSW_syn_results.csv"
+import pandas as pd
+def get_results_set(out_:P) -> set:
+    if out_.exists():
+        return set(map(tuple,pd.read_csv(out_)[['e','M','efc','efs']].values))
+    else:
+        return set()
+        
+# results_df[].to_numpy()
+
+all_efs_done = True
 if not out_csv.exists():
     with csv_lock, open(out_csv, "w") as f:
-        f.write("date,time,num_index_per_subject,M,ef_construction,ef_search,index_build_time,hit_rate,avg_time_ms,total_queries\n")
+        f.write("date,time,e,M,efc,efs,index_build_time,hit_rate,avg_time_ms,total_queries\n")
     # csv_lock.release()  
+else:
+    # check if all the required efs already exists, and break
+    # pass
+    r_set=get_results_set(out_csv)
+    for ef_search in range(args.efs_start, args.efs_end + 1, args.efs_step):
+        if (num_index_per_subject,M,ef_construction,ef_search) not in r_set:
+            all_efs_done = False
+            break
+if all_efs_done:
+    lg.info(f"ALL EXPERIMENTS WITH PARAMS {(num_index_per_subject,M,ef_construction)=} ALREADY DONE --- EXIING")
+    sys.exit(0)
+
 class Node:
     def __init__(self, idx: int, vector: np.ndarray, level: int):
         self.idx = idx
@@ -473,11 +500,18 @@ lg.info(f"Index construction time: {end - st:.4f} seconds")
 
 lg.info(f"Index built with {len(index_vectors)} vectors.")
 
+
+
+
 for ef_search in range(args.efs_start, args.efs_end + 1, args.efs_step):
+    r_set = get_results_set(out_csv)
+    if (num_index_per_subject,M,ef_construction,ef_search) in r_set:
+        lg.info(f'Experiment with params {(num_index_per_subject,M,ef_construction,ef_search)=} already done')
+        continue
     results = evaluate_top1_timing(hnsw,index_labels,query_vectors,query_labels,ef_search=ef_search)
     lg.info(f"Hit rate: {results['hit_rate']}")
     lg.info(f"Average search time (ms): {results['avg_time_s'] * 1000}")
     lg.info(f"Total queries: {results['total_queries']}")
     # save results to csv
     with csv_lock, open(out_csv, "a") as f:
-        f.write(f"{datetime.now().strftime('%Y-%m-%d,%H:%M:%S')},{num_index_per_subject},{M},{ef_construction},{ef_search},{end - st:.4f},{results['hit_rate']},{results['avg_time_s'] * 1000:.4f},{results['total_queries']}\n")
+        f.write(f"{datetime.now().strftime('%Y-%m-%d,%H:%M:%S')},{num_index_per_subject},{M},{ef_construction},{ef_search},{end - st:.4f},{results['hit_rate']:.04f},{results['avg_time_s'] * 1000:.4f},{results['total_queries']}\n")

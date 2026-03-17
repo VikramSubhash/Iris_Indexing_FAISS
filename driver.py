@@ -69,9 +69,13 @@ if __name__ == "__main__":
     # for out in pp_obj(os.system, cmds, batch_size=5):
         # print(f"FIN: {out}")
 
-    pp = Pool(os.cpu_count() - 4)
+    pp = Pool(os.cpu_count() - 2)
     for out in pp.imap(os.system, cmds):
         # print(f"FIN: {out}")
         print(".", end="", flush=True)
-    time.sleep(10000)  # wait for all processes to finish
-    print("\nAll commands executed.")
+    print("ALL WORK DONE, WAITING FOR ANY STRANGLERS BEFORE QUITTING")
+    # time.sleep(10000)  # wait for all processes to finish
+    # print("\nAll commands executed.")
+    pp.close()
+    pp.join()
+  
