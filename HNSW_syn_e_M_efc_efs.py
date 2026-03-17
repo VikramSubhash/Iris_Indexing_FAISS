@@ -1,15 +1,15 @@
 from datetime import datetime
 import os
 import time
-import re
+# import re
 import math
 import heapq
 import random
-import faiss
-from typing import List, Optional
+# import faiss
+# from typing import List, Optional
 import numpy as np
-import plotly.graph_objects as go
-from scipy.io import loadmat
+# import plotly.graph_objects as go
+# from scipy.io import loadmat
 import threading   # added for thread safety in HNSW csv
 import argparse 
 import sys
@@ -20,12 +20,12 @@ parser.add_argument("--e", type=int, default=3, help="Number of index vectors to
 parser.add_argument("--M", type=int, default=32, help="HNSW parameter M (default: 32)")
 parser.add_argument("--efc", type=int, default=300, help="HNSW parameter ef_construction (default: 300)")
 
-parser.add_argument("--efs_start", type=int, default=100, help="HNSW parameter ef_search (default: 400)")
+parser.add_argument("--efs_start", type=int, default=100, help="HNSW parameter ef_search (default: 100)")
 parser.add_argument("--efs_end", type=int, default=1000, help="HNSW parameter ef_search (default: 1000)")
 parser.add_argument("--efs_step", type=int, default=100, help="HNSW parameter ef_search step (default: 100)")
 # parser.add_argument("--efs", type=int, default=400, help="HNSW parameter ef_search (default: 400)")
 # add argument for input dataset folder
-parser.add_argument("--root_folder", type=str, default=f"/home/nishkal/sg/iris_indexing/datasets/iris_syn_test", help="Root folder of the dataset (default: /home/nishkal/sg/iris_indexing/datasets/iris_syn)")
+parser.add_argument("--root_folder", type=str, default=f"/home/nishkal/sg/iris_indexing/datasets/iris_syn", help="Root folder of the dataset (default: /home/nishkal/sg/iris_indexing/datasets/iris_syn)")
 # add an out file argument to save results
 # parser.add_argument("--out", type=str, default=f"HNSW_syn_e3_M32_efc300_efs400.txt", help="Output file to save results (default: results.txt)")
 # parser.add_argument("--out_dir", type=str, default=f"results/hnsw/", help="Directory to save results (default: results/hnsw/)")
@@ -76,7 +76,7 @@ def get_results_set(out_:P) -> set:
         
 # results_df[].to_numpy()
 
-all_efs_done = True
+
 if not out_csv.exists():
     with csv_lock, open(out_csv, "w") as f:
         f.write("date,time,e,M,efc,efs,index_build_time,hit_rate,avg_time_ms,total_queries\n")
@@ -84,14 +84,15 @@ if not out_csv.exists():
 else:
     # check if all the required efs already exists, and break
     # pass
+    all_efs_done = True
     r_set=get_results_set(out_csv)
     for ef_search in range(args.efs_start, args.efs_end + 1, args.efs_step):
         if (num_index_per_subject,M,ef_construction,ef_search) not in r_set:
             all_efs_done = False
             break
-if all_efs_done:
-    lg.info(f"ALL EXPERIMENTS WITH PARAMS {(num_index_per_subject,M,ef_construction)=} ALREADY DONE --- EXIING")
-    sys.exit(0)
+    if all_efs_done:
+        lg.info(f"ALL EXPERIMENTS WITH PARAMS {(num_index_per_subject,M,ef_construction)=} ALREADY DONE --- EXIING")
+        sys.exit(0)
 
 class Node:
     def __init__(self, idx: int, vector: np.ndarray, level: int):
