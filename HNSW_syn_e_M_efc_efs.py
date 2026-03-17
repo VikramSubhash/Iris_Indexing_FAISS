@@ -24,7 +24,7 @@ parser.add_argument("--efs_end", type=int, default=1000, help="HNSW parameter ef
 parser.add_argument("--efs_step", type=int, default=100, help="HNSW parameter ef_search step (default: 100)")
 # parser.add_argument("--efs", type=int, default=400, help="HNSW parameter ef_search (default: 400)")
 # add argument for input dataset folder
-parser.add_argument("--root_folder", type=str, default=f"/home/nishkal/sg/iris_indexing/datasets/iris_syn_test", help="Root folder of the dataset (default: /home/nishkal/sg/iris_indexing/datasets/iris_syn)")
+parser.add_argument("--root_folder", type=str, default=f"/home/nishkal/sg/iris_indexing/datasets/iris_syn", help="Root folder of the dataset (default: /home/nishkal/sg/iris_indexing/datasets/iris_syn)")
 # add an out file argument to save results
 # parser.add_argument("--out", type=str, default=f"HNSW_syn_e3_M32_efc300_efs400.txt", help="Output file to save results (default: results.txt)")
 # parser.add_argument("--out_dir", type=str, default=f"results/hnsw/", help="Directory to save results (default: results/hnsw/)")
@@ -36,7 +36,7 @@ num_index_per_subject = args.e
 M = args.M
 ef_construction = args.efc
 
-ef_search = args.efs
+# ef_search = args.efs
 
 
 out_dir = f"results/hnsw/"
@@ -65,7 +65,7 @@ out_csv = P(f"{out_dir}").parent/"HNSW_syn_results.csv"
 if not out_csv.exists():
     with csv_lock, open(out_csv, "w") as f:
         f.write("date,time,num_index_per_subject,M,ef_construction,ef_search,index_build_time,hit_rate,avg_time_ms,total_queries\n")
-
+    # csv_lock.release()  
 class Node:
     def __init__(self, idx: int, vector: np.ndarray, level: int):
         self.idx = idx

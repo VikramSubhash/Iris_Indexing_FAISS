@@ -39,8 +39,9 @@ done
 """
 
 import os
-
-from np_lib import Parallel as pp
+from multiprocessing import Pool
+import time
+# from np_lib import Parallel as pp
 
 if __name__ == "__main__":
 
@@ -61,9 +62,16 @@ if __name__ == "__main__":
                 cmds.append(cmd)
                 # print(f"Running with e={e}, M={M}, efc={efc}, efs={efs_start}_{efs_end}_{efs_step}")
     print(f"Total commands to run: {len(cmds)}")
-    print(cmds[0])
-    pp_obj = pp(debug=True) # usage is pp_obj(function = os.system, list_of_args = "python ...")
-    os.system(cmds[0]) 
+    # print(cmds[0])
+    # pp_obj = pp(debug=True) # usage is pp_obj(function = os.system, list_of_args = "python ...")
+    # os.system(cmds[0]) 
     
-    # for out in pp_obj(os.system, cmds[:1], batch_size=5):
+    # for out in pp_obj(os.system, cmds, batch_size=5):
         # print(f"FIN: {out}")
+
+    pp = Pool(os.cpu_count() - 4)
+    for out in pp.imap(os.system, cmds):
+        # print(f"FIN: {out}")
+        print(".", end="", flush=True)
+    time.sleep(10000)  # wait for all processes to finish
+    print("\nAll commands executed.")
