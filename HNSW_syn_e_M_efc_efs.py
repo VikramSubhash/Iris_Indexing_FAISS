@@ -29,6 +29,7 @@ parser.add_argument("--root_folder", type=str, default=f"/home/nishkal/sg/iris_i
 # add an out file argument to save results
 # parser.add_argument("--out", type=str, default=f"HNSW_syn_e3_M32_efc300_efs400.txt", help="Output file to save results (default: results.txt)")
 # parser.add_argument("--out_dir", type=str, default=f"results/hnsw/", help="Directory to save results (default: results/hnsw/)")
+parser.add_argument("--out_csv", type=str, default=f"HNSW_syn_results", help="Results CSV File Name without the extension (default: HNSW_syn_results)")
 args = parser.parse_args()
 
 from pathlib import Path as P
@@ -66,7 +67,7 @@ lg.basicConfig(
 
 csv_lock = threading.Lock()  # added
 
-out_csv:P = out_dir.parent/"HNSW_syn_results.csv"
+out_csv:P = out_dir.parent/f"{args.out_csv.replace(".csv","")}.csv"
 import pandas as pd
 def get_results_set(out_:P) -> set:
     if out_.exists():
